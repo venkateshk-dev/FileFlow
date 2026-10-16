@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileFlow | Free Online File Converter</title>
+    <meta name="description" content="Convert images and spreadsheet files online with FileFlow.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a class="brand" href="/">
+            <span class="brand-icon">⇄</span>
+            FileFlow
+        </a>
+        <span class="nav-label">Free Online File Converter</span>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <span class="eyebrow">SIMPLE · FAST · FREE</span>
+            <h1>Every file has a<br><span>new possibility.</span></h1>
+            <p>Convert your files into the formats you need.<br>
+               Upload, convert and download — all in one place.</p>
+        </section>
+
+        <section class="converter-card">
+            <div class="section-heading">
+                <div>
+                    <h2>Convert your file</h2>
+                    <p>Select a file and choose your output format.</p>
+                </div>
+                <span class="secure-label">Up to 20 MB</span>
+            </div>
+
+            <form id="converter-form">
+                <label class="drop-zone" id="drop-zone" for="file-input">
+                    <div class="upload-icon">↑</div>
+                    <h3>Drop your file here</h3>
+                    <p>or <span class="browse-link">browse your computer</span></p>
+                    <span class="file-types">Images · CSV · Excel · JSON</span>
+                    <input id="file-input" type="file" name="file"
+                           accept=".png,.jpg,.jpeg,.webp,.csv,.xlsx,.json,.docx,.txt"
+                           required>
+                </label>
+
+                <div class="selected-file" id="selected-file" hidden>
+                    <div class="file-icon">▤</div>
+                    <div class="file-details">
+                        <strong id="file-name"></strong>
+                        <span id="file-size"></span>
+                    </div>
+                    <button type="button" class="remove-button" id="remove-file"
+                            aria-label="Remove selected file">×</button>
+                </div>
+
+                <div class="format-row">
+                    <div class="field">
+                        <label for="target">Convert to</label>
+                        <select id="target" name="target" required>
+                            <option value="pdf">PDF Document (.pdf)</option>
+                            <option value="png">PNG Image (.png)</option>
+                            <option value="jpg">JPG Image (.jpg)</option>
+                            <option value="webp">WEBP Image (.webp)</option>
+                            <option value="csv">CSV Spreadsheet (.csv)</option>
+                            <option value="xlsx">Excel Spreadsheet (.xlsx)</option>
+                            <option value="json">JSON Data (.json)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="convert-button" id="convert-button">
+                    Convert file <span>→</span>
+                </button>
+            </form>
+
+            <div class="status-message" id="status-message" role="status"
+                 aria-live="polite" hidden></div>
+
+            <p class="privacy-note">Your files are processed temporarily.
+                Don't upload confidential or sensitive documents.</p>
+        </section>
+
+        <section class="features">
+            <article class="feature">
+                <span class="feature-icon purple">▤</span>
+                <h3>Multiple formats</h3>
+                <p>Work with common image and data formats in one place.</p>
+            </article>
+            <article class="feature">
+                <span class="feature-icon green">↗</span>
+                <h3>Easy downloads</h3>
+                <p>Download your converted file directly to your device.</p>
+            </article>
+            <article class="feature">
+                <span class="feature-icon orange">⌁</span>
+                <h3>Simple to use</h3>
+                <p>No account required for the basic conversion workflow.</p>
+            </article>
+        </section>
+    </main>
+
+    <footer>
+        <a class="brand footer-brand" href="/">⇄ FileFlow</a>
+        <p>A simple file conversion project.</p>
+    </footer>
+
+    <script>
+        const form = document.getElementById("converter-form");
+        const input = document.getElementById("file-input");
+        const dropZone = document.getElementById("drop-zone");
+        const selectedFile = document.getElementById("selected-file");
+        const fileName = document.getElementById("file-name");
+        const fileSize = document.getElementById("file-size");
+        const target = document.getElementById("target");
+        const button = document.getElementById("convert-button");
+        const status = document.getElementById("status-message");
+
+        
+const supported = {
+    png: ["png", "jpg", "webp"],
+    jpg: ["png", "jpg", "webp"],
+    jpeg: ["png", "jpg", "webp"],
+    webp: ["png", "jpg", "webp"],
+    csv: ["csv", "xlsx", "json"],
+    xlsx: ["csv", "xlsx", "json"],
+    json: ["csv", "xlsx", "json"],
+    docx: ["pdf"],
+    txt: ["pdf"]
+};
+
+
+        function extension(file) {
+            return file.name.split(".").pop().toLowerCase();
+        }
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = "status-message " + type;
+            status.hidden = false;
+        }
+
+        function updateFile() {
+            const file = input.files[0];
+            if (!file) {
+                selectedFile.hidden = true;
+                dropZone.hidden = false;
+                return;
+            }
+
+            fileName.textContent = file.name;
+            fileSize.textContent = (file.size / 1024).toFixed(1) + " KB";
+            selectedFile.hidden = false;
+            dropZone.hidden = true;
+            status.hidden = true;
+
+            const ext = extension(file);
+            const options = supported[ext] || [];
+
+            for (const option of target.options) {
+                option.disabled = !options.includes(option.value);
+            }
+
+            if (options.length && !options.includes(target.value)) {
+                target.value = options[0];
+            }
+
+            if (!options.length) {
+                showStatus("This file type is not supported yet.", "error");
+            }
+        }
+
+        input.addEventListener("change", updateFile);
+
+        document.getElementById("remove-file").addEventListener("click", () => {
+            input.value = "";
+            updateFile();
+            status.hidden = true;
+        });
+
+        for (const eventName of ["dragenter", "dragover"]) {
+            dropZone.addEventListener(eventName, event => {
+                event.preventDefault();
+                dropZone.classList.add("dragging");
+            });
+        }
+
+        for (const eventName of ["dragleave", "drop"]) {
+            dropZone.addEventListener(eventName, event => {
+                event.preventDefault();
+                dropZone.classList.remove("dragging");
+            });
+        }
+
+        dropZone.addEventListener("drop", event => {
+            const files = event.dataTransfer.files;
+            if (files.length) {
+                input.files = files;
+                updateFile();
+            }
+        });
+
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+
+            const file = input.files[0];
+            if (!file) {
+                showStatus("Please select a file first.", "error");
+                return;
+            }
+
+            const ext = extension(file);
+            if (!supported[ext]) {
+                showStatus("This file format is not supported yet.", "error");
+                return;
+            }
+
+            if (!supported[ext].includes(target.value)) {
+                showStatus("Choose a compatible output format.", "error");
+                return;
+            }
+
+            if (file.size > 20 * 1024 * 1024) {
+                showStatus("The maximum file size is 20 MB.", "error");
+                return;
+            }
+
+            const data = new FormData();
+            data.append("file", file);
+            data.append("target", target.value);
+
+            button.disabled = true;
+            button.innerHTML = "Converting...";
+            showStatus("Your file is being converted. Please wait.", "loading");
+
+            try {
+                const response = await fetch("/convert", {
+                    method: "POST",
+                    body: data
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || "Conversion failed.");
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = file.name.replace(/\.[^.]+$/, "") +
+                    "." + target.value;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+
+                showStatus("Conversion complete! Your download has started.", "success");
+            } catch (error) {
+                showStatus(error.message || "Something went wrong.", "error");
+            } finally {
+                button.disabled = false;
+                button.innerHTML = 'Convert file <span>→</span>';
+            }
+        });
+    </script>
+</body>
+</html>
